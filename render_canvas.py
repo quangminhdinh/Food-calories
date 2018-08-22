@@ -1,6 +1,14 @@
 import pygame
 import os
 import gradients
+import cv2
+import pickle
+import numpy as np
+from nutritionix1012 import NutritionixClient
+from nutritionix import Nutritionix
+
+NUTRITIONIX_APP_ID = "f6574712"
+NUTRITIONIX_API_KEY = "a232f7cc5be24b44d07d94a6985a5810"
 
 
 class Button:
@@ -86,6 +94,23 @@ class DropDown:
                           self.main_box.y + 10 / 2, self.main_box.h - 10, self.main_box.h - 10, self.canvas)
 
 
+class SearchBar:
+
+    def __init__(self, canvas, x, y, w, h, alpha, placeholder, search_hints, dr_alpha, text_color):
+        self.canvas = canvas
+        self.main_input_box = Button(w, h, x, y, alpha, 2, canvas, placeholder, 255, "", (0, 0, 0, 0))
+        self.buttons = []
+        for button in range(len(search_hints)):
+            temp_but = Button(w, h, x, y + (button + 1) * h, dr_alpha, 2, canvas, "", 255, "", (0, 0, 0, 0))
+            self.buttons.append(temp_but)
+        self.text_color = text_color
+
+    def render(self):
+        self.main_input_box.render()
+        display_text(self.main_input_box.x + 20, (self.main_input_box.h - 20) // 2 + self.main_input_box.y, None, 30,
+                     self.main_input_box.value, self.text_color, self.canvas)
+
+
 class SideBar:
 
     def __init__(self, canvas):
@@ -103,19 +128,99 @@ def load_sound(music, loop, channel):
 
 
 def display_text(x, y, _font, size, text, color, canvas):
-    font = pygame.font.Font(_font, size)
-    display_txt = font.render(text, True, color)
+    display_txt = get_text_parameter(_font, size, text, color)
     canvas.blit(display_txt, (x, y))
 
 
 def display_text_middle(_font, size, text, color, canvas, but):
-    font = pygame.font.Font(_font, size)
-    display_txt = font.render(text, True, color)
+    display_txt = get_text_parameter(_font, size, text, color)
     canvas.blit(display_txt, ((but.w - display_txt.get_width()) // 2 + but.x,
                               (but.h - display_txt.get_height()) // 2 + but.y))
 
 
 def display_text_middle_screen(width, y, _font, size, text, color, canvas):
+    display_txt = get_text_parameter(_font, size, text, color)
+    canvas.blit(display_txt, ((width - display_txt.get_width()) // 2, y))
+
+
+def get_text_parameter(_font, size, text, color):
     font = pygame.font.Font(_font, size)
     display_txt = font.render(text, True, color)
-    canvas.blit(display_txt, ((width - display_txt.get_width()) // 2, y))
+    return display_txt
+
+
+class CameraVideo:
+
+    def __init__(self, frame, canvas, heights, x, true_height):
+        self.canvas = canvas
+        self.heights = heights
+        self.x = x
+        self.true_height = true_height
+        height, width, layers = frame.shape
+        ratio = self.heights / height
+        new_w = int(width * ratio)
+        self.camera = Button(new_w + 42, 70, x, (true_height + heights) // 2 - 70, 100, 1, canvas, "", 155, "", 0)
+
+    def video_surface(self, frame):
+        height, width, layers = frame.shape
+        ratio = self.heights / height
+        new_w = int(width * ratio)
+        screen = pygame.Surface((new_w, self.heights))
+        screen.fill([0, 0, 0])
+        frame = cv2.resize(frame, (new_w, self.heights))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = np.rot90(frame)
+        frame = pygame.surfarray.make_surface(frame)
+        screen.blit(frame, (0, 0))
+        self.canvas.blit(screen, (self.x, (self.true_height - self.heights) // 2))
+        self.camera.render()
+        display_text_middle(None, 30, "Capture", (255, 255, 255), self.canvas, self.camera)
+
+
+def file_read(file):
+    pkl_file = open(file, "rb")
+    json_data = pickle.load(pkl_file)
+    pkl_file.close()
+    return json_data
+
+
+def file_write(datas, key, value, file):
+    dump_data = datas
+    dump_data[key] = value
+    output = open(file, 'wb')
+    pickle.dump(dump_data, output)
+    output.close()
+
+
+def get_key_and_id(is_v2):
+    if is_v2:
+        nix = NutritionixClient(application_id=NUTRITIONIX_APP_ID, api_key=NUTRITIONIX_API_KEY)
+    else:
+        nix = Nutritionix(app_id=NUTRITIONIX_APP_ID, api_key=NUTRITIONIX_API_KEY)
+    return nix
+
+
+def food_natural_progress(plate, food):
+    nix = get_key_and_id(True)
+    query_string = "1 {0} {1}".format(plate, food)
+    data_require = nix.natural(q=query_string)
+    return data_require
+
+
+def exercise_natural_progess(time, unit, exercise):
+    nix = get_key_and_id(True)
+    query_string = "{0} {1} {2}".format(time, unit, exercise)
+    data_require = nix.exercise(q=query_string)
+    return data_require
+
+
+def autocomplete_search_bar(query):
+    nix = get_key_and_id(True)
+    data_require = nix.autocomplete(q=query)
+    return data_require
+
+
+def food_search_index(query):
+    nix = get_key_and_id(False)
+    food_search = nix.search(q=query, results="0:1").json()
+    return food_search

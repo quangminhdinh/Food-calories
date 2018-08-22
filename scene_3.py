@@ -35,7 +35,7 @@ class Scene3:
         # display_image(self.logo, (self.width - self.logo.get_width()) // 2,
         #               (self.height - self.logo.get_height()) // 2 - 50, self.logo.get_width(),
         #               self.logo.get_height(), self.canvas)
-        self.blur.render()
+        # self.blur.render()
 
         self.name.render()
         display_text(self.name.x + 20, (self.name.h - 20) // 2 + self.name.y, None, 25, self.name.value,
@@ -150,6 +150,15 @@ class Scene3:
                                 self.name.alpha = (255, 155, 155, 155)
                                 self.name.error = "Please fill in this field!"
                             if allow:
+                                profile_data = {
+                                    "name": self.name.value,
+                                    "age": self.age.value,
+                                    "height": self.height.value,
+                                    "weight": self.weight.value,
+                                    "gender": self.gender.value,
+                                    "lifestyle": self.lifestyle.value
+                                }
+                                file_write(profile_data, "name", self.name.value, "profile.pkl")
                                 self.activate = False
                                 scene1_render = False
                         else:
@@ -161,10 +170,12 @@ class Scene3:
                                     allow_input = True
                                     break
                             lk = True
+                            deactivate_other = None
                             for dr in dropdown_component_list:
                                 if dr.main_box.activate(mouse_pos):
                                     lk = False
                                     dr.activate = (dr.activate is False)
+                                    deactivate_other = dr
                                     break
                                 for index, btn in enumerate(dr.buttons):
                                     if btn.activate(mouse_pos) and dr.activate:
@@ -175,6 +186,11 @@ class Scene3:
                                 for cr in dropdown_component_list:
                                     if cr.activate:
                                         cr.activate = False
+                            else:
+                                if deactivate_other is not None:
+                                    for cc in dropdown_component_list:
+                                        if cc != deactivate_other:
+                                            cc.activate = False
                     elif event.type == KEYDOWN and active_component is not None:
                         if active_component.value.endswith("|"):
                             active_component.value = active_component.value[:-1]
@@ -183,7 +199,8 @@ class Scene3:
                         elif event.key == K_BACKSPACE:
                             active_component.value = active_component.value[:-1]
                         else:
-                            active_component.value += event.unicode
+                            if get_text_parameter(None, 30, active_component.value, (0, 0, 0)).get_width() < 650:
+                                active_component.value += event.unicode
                     elif event.type == MOUSEMOTION:
                         mouse_pos = pygame.mouse.get_pos()
                 if not allow_input:

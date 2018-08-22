@@ -4,8 +4,10 @@ import requests
 import urllib.parse
 
 API_VERSION = "v2"
-BASE_URL = "https://apibeta.nutritionix.com/%s/" % (API_VERSION)
-EX_URL = "https://trackapi.nutritionix.com/v2/natural/exercise"
+BASE_URL = "https://apibeta.nutritionix.com/{0}/".format(API_VERSION)
+EXERCISE_URL = "https://trackapi.nutritionix.com/v2/natural/exercise"
+NATURAL_NUTRIENT_URL = "https://trackapi.nutritionix.com/v2/natural/nutrients"
+AUTOCOMPLETE_URL = "https://trackapi.nutritionix.com/v2/search/instant"
 
 
 class NutritionixClient:
@@ -15,7 +17,7 @@ class NutritionixClient:
         self.API_KEY = api_key
         self.DEBUG = False
 
-        if debug == True:
+        if debug:
             self.DEBUG = debug
             logging.basicConfig(level=logging.DEBUG)
 
@@ -34,11 +36,11 @@ class NutritionixClient:
         """
 
         # Verifies params
-        if params.get('limit') != None and params.get('offset') == None:
+        if params.get('limit') is not None and params.get('offset') is None:
             raise Exception('Missing offset',
                             'limit and offset are required for paginiation.')
 
-        elif params.get('offset') != None and params.get('limit') == None:
+        elif params.get('offset') is not None and params.get('limit') is None:
             raise Exception('Missing limit',
                             'limit and offset are required for paginiation.')
 
@@ -59,14 +61,11 @@ class NutritionixClient:
             return None
 
         # Log response content
-        logging.debug("Response Content: %s" % (r.text))
+        logging.debug("Response Content: {0}".format(r.text))
 
         return r.json()
 
-
-    #--------------
     # API Methods #
-    #--------------
 
     def autocomplete(self, **kwargs):
         """
@@ -74,15 +73,24 @@ class NutritionixClient:
         boxes. The term selected by the user in autocomplete will pass to
         the /search endpoint.
         """
-        
+
         # If first arg is String then use it as query
         params = {}
         if kwargs:
             params = kwargs
 
-        endpoint = urllib.parse.urljoin(BASE_URL, 'autocomplete')
+        data = {
+            'query': ''
+        }
+        if params.get('q'):
+            data['query'] = params.get('q')
+            # Removes 'q' argument from params to avoid pass it as URL argument
+            del params['q']
 
-        return self.execute(endpoint, params=params)
+        endpoint = AUTOCOMPLETE_URL
+
+        return self.execute(endpoint, method="POST", params=params, data=data,
+                            headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
     def natural(self, **kwargs):
         """
@@ -95,15 +103,18 @@ class NutritionixClient:
             params = kwargs
 
         # Converts 'q' argument as request data
-        data = ''
+        data = {
+            'query': ''
+        }
         if params.get('q'):
-            data = params.get('q')
+            data['query'] = params.get('q')
             # Removes 'q' argument from params to avoid pass it as URL argument
             del params['q']
 
-        endpoint = urllib.parse.urljoin(BASE_URL, 'natural')
+        endpoint = NATURAL_NUTRIENT_URL
 
-        return self.execute(endpoint, method="POST", params=params, data=data, headers={'Content-Type': 'text/plain'})
+        return self.execute(endpoint, method="POST", params=params, data=data,
+                            headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
     def exercise(self, **kwargs):
         """
@@ -117,16 +128,17 @@ class NutritionixClient:
 
         # Converts 'q' argument as request data
         data = {
-            'query': '' 
+            'query': ''
         }
         if params.get('q'):
             data['query'] = params.get('q')
             # Removes 'q' argument from params to avoid pass it as URL argument
             del params['q']
 
-        endpoint = EX_URL
+        endpoint = EXERCISE_URL
 
-        return self.execute(endpoint, method="POST", params=params, data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        return self.execute(endpoint, method="POST", params=params, data=data,
+                            headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
     def search(self, **kwargs):  # TODO: Add advance search filters
         """
