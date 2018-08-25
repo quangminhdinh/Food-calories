@@ -55,7 +55,6 @@ class Scene5:
                     elif event.type == MOUSEBUTTONUP and act:
                         cv2.imwrite("temp.jpg", frame)
                         scene1_render = False
-                        self.activate = False
                 pygame.display.update()
                 fps_clock.tick(200)
 

@@ -8,6 +8,7 @@ BASE_URL = "https://apibeta.nutritionix.com/{0}/".format(API_VERSION)
 EXERCISE_URL = "https://trackapi.nutritionix.com/v2/natural/exercise"
 NATURAL_NUTRIENT_URL = "https://trackapi.nutritionix.com/v2/natural/nutrients"
 AUTOCOMPLETE_URL = "https://trackapi.nutritionix.com/v2/search/instant"
+ITEM_URL = "https://trackapi.nutritionix.com/v2/search/item/"
 
 
 class NutritionixClient:
@@ -162,9 +163,19 @@ class NutritionixClient:
         if kwargs:
             params = kwargs
 
-        endpoint = urllib.parse.urljoin(BASE_URL, 'item/%s' % (params.get('id')))
+        data = {
+            'query': ''
+        }
+        if params.get('q'):
+            data['query'] = params.get('q')
+            # Removes 'q' argument from params to avoid pass it as URL argument
+            params['query'] = params.get('q')
+            del params['q']
 
-        return self.execute(endpoint)
+        endpoint = AUTOCOMPLETE_URL
+
+        return self.execute(endpoint, method="GET", params=params, data=data,
+                            headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
     def brand(self, **kwargs):
         """Look up a specific brand by ID. """

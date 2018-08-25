@@ -44,7 +44,6 @@ class Scene4:
                     elif event.type == MOUSEMOTION:
                         mouse_pos = pygame.mouse.get_pos()
                     elif event.type == MOUSEBUTTONUP and act:
-                        self.activate = False
                         scene1_render = False
                 pygame.display.update()
                 fps_clock.tick(200)

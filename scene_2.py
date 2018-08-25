@@ -42,7 +42,6 @@ class Scene2:
                         pygame.quit()
                         sys.exit()
                     elif event.type == MOUSEBUTTONUP and act:
-                        self.activate = False
                         scene1_render = False
                     elif event.type == MOUSEMOTION:
                         mouse_pos = pygame.mouse.get_pos()

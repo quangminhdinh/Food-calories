@@ -4,11 +4,14 @@ import gradients
 import cv2
 import pickle
 import numpy as np
+
 from nutritionix1012 import NutritionixClient
 from nutritionix import Nutritionix
 
 NUTRITIONIX_APP_ID = "f6574712"
 NUTRITIONIX_API_KEY = "a232f7cc5be24b44d07d94a6985a5810"
+nix_client = NutritionixClient(application_id=NUTRITIONIX_APP_ID, api_key=NUTRITIONIX_API_KEY)
+nix = Nutritionix(app_id=NUTRITIONIX_APP_ID, api_key=NUTRITIONIX_API_KEY)
 
 
 class Button:
@@ -184,43 +187,34 @@ def file_read(file):
     return json_data
 
 
-def file_write(datas, key, value, file):
-    dump_data = datas
-    dump_data[key] = value
+def file_write(datas, file):
     output = open(file, 'wb')
-    pickle.dump(dump_data, output)
+    pickle.dump(datas, output)
     output.close()
 
 
-def get_key_and_id(is_v2):
-    if is_v2:
-        nix = NutritionixClient(application_id=NUTRITIONIX_APP_ID, api_key=NUTRITIONIX_API_KEY)
-    else:
-        nix = Nutritionix(app_id=NUTRITIONIX_APP_ID, api_key=NUTRITIONIX_API_KEY)
-    return nix
-
-
 def food_natural_progress(plate, food):
-    nix = get_key_and_id(True)
     query_string = "1 {0} {1}".format(plate, food)
-    data_require = nix.natural(q=query_string)
+    data_require = nix_client.natural(q=query_string)['foods'][0]
     return data_require
 
 
 def exercise_natural_progess(time, unit, exercise):
-    nix = get_key_and_id(True)
     query_string = "{0} {1} {2}".format(time, unit, exercise)
-    data_require = nix.exercise(q=query_string)
+    data_require = nix_client.exercise(q=query_string)
     return data_require
 
 
 def autocomplete_search_bar(query):
-    nix = get_key_and_id(True)
-    data_require = nix.autocomplete(q=query)
+    data_require = nix_client.autocomplete(q=query)
+    return data_require
+
+
+def item_search_bar(query):
+    data_require = nix_client.item(q=query)
     return data_require
 
 
 def food_search_index(query):
-    nix = get_key_and_id(False)
     food_search = nix.search(q=query, results="0:1").json()
     return food_search

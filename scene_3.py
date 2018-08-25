@@ -158,8 +158,7 @@ class Scene3:
                                     "gender": self.gender.value,
                                     "lifestyle": self.lifestyle.value
                                 }
-                                file_write(profile_data, "name", self.name.value, "profile.pkl")
-                                self.activate = False
+                                file_write(profile_data, "profile.pkl")
                                 scene1_render = False
                         else:
                             for com in num_component_list:
